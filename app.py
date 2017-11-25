@@ -67,6 +67,19 @@ class ExpressionNode:
     def setLastPos(self, lastpos):
         self.lastpos = lastpos
 
+class FollowPosNodes:
+    def __init__(self, position):
+        self.followpos = set()    
+        self.position = position
+    
+    def getFollowPos(self):
+        return self.followpos
+
+    def getPosition(self):
+        return self.position
+
+    def setFollowPos(self, followpos):
+        self.followpos = followpos
 
 
 ExNode = ExpressionNode(False)
@@ -74,6 +87,7 @@ ExNode = ExpressionNode(False)
 list_of_nodes = []
 global global_naming
 global_naming = 0
+follow_pos = []
 
 
 precedence = {}
@@ -156,6 +170,7 @@ def dfa(postfix):
         if postfix[counter] == 'm':
             postfix.pop(counter)
             ExNode.setNullable(True)
+            calculateFollowPosStar()
             counter = 0
 
         counter += 1
@@ -167,11 +182,14 @@ def calculateCAT(op1, op2, oper):
     print(op1, ' ', op2, ' ', oper)
     global global_naming
 
+    
+
     if (op1) is 'd':
         
         obj1 = Node(False)
         global_naming += 1
 
+        calculateFollowPosCat(ExNode.getLastPos(), obj1.getFirstPos())
 
         if(ExNode.getNullable() is True):
             ExNode.setFirstPos(obj1.getFirstPos() | ExNode.getFirstPos())  
@@ -196,6 +214,7 @@ def calculateCAT(op1, op2, oper):
         obj2 = Node(False)
         global_naming += 1
 
+        calculateFollowPosCat(obj1.getLastPos(), obj2.getFirstPos())
 
         if(ExNode.getNullable() is True):
             ExNode.setFirstPos(obj1.getFirstPos() | obj2.getFirstPos())  
@@ -244,16 +263,44 @@ def calculateOR(op1, op2, oper):
         list_of_nodes.append(obj2)
 
 
-    
+
+def calculateFollowPosCat(position, obj2):
+
+    position_list = []
+
+    for x in follow_pos:
+        position_list.append(x.getPosition())
+
+    for x in position:
+        if x not in position_list:
+            followPos = FollowPosNodes(x)
+            followPos.setFollowPos(obj2)
+            follow_pos.append(followPos)
+            
+        else:
+            for y in follow_pos:
+                if x == y.getPosition():
+                    y.setFollowPos(y.getFollowPos() | obj2)
+
+                
+
+
+def calculateFollowPosStar():
+    for i in ExNode.getFirstPos():
+        followPos = FollowPosNodes(i)
+        followPos.setFollowPos(followPos.getFollowPos() | ExNode.getLastPos())
+        follow_pos.append(followPos)
+
+
 
 
 postfix = convert("( a + b ) m . a . b . b ")
 dfa(postfix)
 calculateCAT('d', '#', '.')
 print("Node  FirstPos  LastPos   Nullable")
-for x in list_of_nodes:
-    print("Node" , "       " , x.getFirstPos(), "     ", x.getLastPos(), "    ", x.getNullable() )
 
 print("Node" , "       " , ExNode.getFirstPos(), "     ", ExNode.getLastPos(), "    ", ExNode.getNullable() )
 
+for x in follow_pos:
+    print(x.getPosition(), ' ', x.getFollowPos())
 
