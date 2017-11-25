@@ -294,7 +294,7 @@ def calculateFollowPosStar():
 
 
 
-postfix = convert("( a + b ) m . a . b . b ")
+postfix = convert("a + ( b + a ) m . a . a")
 dfa(postfix)
 calculateCAT('d', '#', '.')
 print("Node  FirstPos  LastPos   Nullable")
@@ -303,4 +303,3 @@ print("Node" , "       " , ExNode.getFirstPos(), "     ", ExNode.getLastPos(), "
 
 for x in follow_pos:
     print(x.getPosition(), ' ', x.getFollowPos())
-
