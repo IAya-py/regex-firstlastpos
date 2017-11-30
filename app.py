@@ -81,6 +81,26 @@ class FollowPosNodes:
     def setFollowPos(self, followpos):
         self.followpos = followpos
 
+class DTrans:
+    def __init__(self):
+        self.transA = set()
+        self.transB = set()
+        self.name = chr(asciiValue)
+
+    def getTransA(self):
+        return self.transA
+
+    def setTransA(self, transA):
+        self.transA = transA
+
+    def getTransB(self):
+        return self.transB
+
+    def setTransB(self, transB):
+        self.transB = transB
+    
+    def getName(self):
+        return self.name
 
 ExNode = ExpressionNode(False)
 
@@ -88,6 +108,11 @@ list_of_nodes = []
 global global_naming
 global_naming = 0
 follow_pos = []
+dfaTable = []
+stateList = []
+dicts = {}
+global asciiValue
+asciiValue = 65
 
 
 precedence = {}
@@ -174,19 +199,17 @@ def dfa(postfix):
             counter = 0
 
         counter += 1
-
-
                 
 def calculateCAT(op1, op2, oper):
 
     print(op1, ' ', op2, ' ', oper)
     global global_naming
 
-    
-
     if (op1) is 'd':
         
         obj1 = Node(False)
+        dicts.update({global_naming: op2});
+
         global_naming += 1
 
         calculateFollowPosCat(ExNode.getLastPos(), obj1.getFirstPos())
@@ -213,7 +236,8 @@ def calculateCAT(op1, op2, oper):
         global_naming += 1
         obj2 = Node(False)
         global_naming += 1
-
+        dicts.update({global_naming: op1});
+        dicts.update({global_naming: op2});
         calculateFollowPosCat(obj1.getLastPos(), obj2.getFirstPos())
 
         if(ExNode.getNullable() is True):
@@ -240,6 +264,8 @@ def calculateOR(op1, op2, oper):
         
         obj1 = Node(False)
         global_naming += 1
+        dicts.update({global_naming: op1});
+        
 
         ExNode.setNullable(obj1.getNullable() | ExNode.getNullable())
         ExNode.setFirstPos(obj1.getFirstPos() | ExNode.getFirstPos())  
@@ -251,18 +277,21 @@ def calculateOR(op1, op2, oper):
         
 
         obj1 = Node(False)
+        dicts.update({global_naming: op1});
         global_naming += 1
         obj2 = Node(False)
+        dicts.update({global_naming: op2});
         global_naming += 1
 
+
+        
+        
         ExNode.setNullable(obj1.getNullable() | obj2.getNullable())
         ExNode.setFirstPos(obj1.getFirstPos() | obj2.getFirstPos())  
         ExNode.setLastPos(obj1.getLastPos() | obj2.getLastPos())
         print(ExNode.getFirstPos(), " ", ExNode.getLastPos())
         list_of_nodes.append(obj1)
         list_of_nodes.append(obj2)
-
-
 
 def calculateFollowPosCat(position, obj2):
 
@@ -282,24 +311,49 @@ def calculateFollowPosCat(position, obj2):
                 if x == y.getPosition():
                     y.setFollowPos(y.getFollowPos() | obj2)
 
-                
-
-
 def calculateFollowPosStar():
     for i in ExNode.getFirstPos():
         followPos = FollowPosNodes(i)
         followPos.setFollowPos(followPos.getFollowPos() | ExNode.getLastPos())
         follow_pos.append(followPos)
 
-
-
-
-postfix = convert("a + ( b + a ) m . a . a")
+postfix = convert("( a + b ) m . a . b . b")
 dfa(postfix)
 calculateCAT('d', '#', '.')
+
+stateList = [ExNode.getFirstPos()]
 print("Node  FirstPos  LastPos   Nullable")
 
-print("Node" , "       " , ExNode.getFirstPos(), "     ", ExNode.getLastPos(), "    ", ExNode.getNullable() )
+print("Node" , "       " , ExNode.getFirstPos(), "     ", ExNode.getLastPos(), "    ", ExNode.getNullable())
 
-for x in follow_pos:
-    print(x.getPosition(), ' ', x.getFollowPos())
+print(stateList)
+
+for x in stateList:
+    temp_set_a = set()
+    temp_set_b = set()
+    tempDtrans = DTrans()
+    for y in x:
+        if dicts[y] == 'a':
+            for x in follow_pos:
+                if x.getPosition() == y:
+                    temp_set_a = temp_set_a | x.getFollowPos()
+            
+        else:
+            for x in follow_pos:
+                if x.getPosition() == y:
+                    temp_set_b = temp_set_b | x.getFollowPos()
+                    
+    tempDtrans.setTransA(temp_set_a)
+    tempDtrans.setTransB(temp_set_b)
+    dfaTable.append(tempDtrans)
+
+    asciiValue += 1
+    if temp_set_a not in stateList:
+        stateList.append(temp_set_a)
+    
+    if temp_set_b not in stateList:
+        stateList.append(temp_set_b)
+
+print('State', '  ' , 'Trans A', '   ', 'TransB')
+for states in dfaTable:
+    print(states.getName(), ' ', states.getTransA(), states.getTransB())
